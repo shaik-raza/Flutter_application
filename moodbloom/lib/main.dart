@@ -1,0 +1,856 @@
+          const SizedBox(height: 20),
+          const Text('Recent Entries',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16)),
+          const SizedBox(height: 10),
+          ...store.entries.take(3).map((e) => _EntryCard(entry: e)),
+        ],
+      ),
+    );
+  }
+}
+
+class _GreetingCard extends StatelessWidget {
+  final int streak;
+  const _GreetingCard({required this.streak});
+
+  String get _greeting {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good Morning';
+    if (h < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(_greeting,
+                  style: TextStyle(
+                      color: Colors.white.withOpacity(0.8), fontSize: 14)),
+              const SizedBox(height: 4),
+              const Text('How are you feeling?',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20)),
+            ],
+          ),
+        ),
+        if (streak > 0)
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFD700).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                  color: const Color(0xFFFFD700).withOpacity(0.4)),
+            ),
+            child: Column(children: [
+              const Text('ðŸ”¥',
+                  style: TextStyle(fontSize: 20)),
+              Text('$streak days',
+                  style: const TextStyle(
+                      color: Color(0xFFFFD700),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold)),
+            ]),
+          ),
+      ]),
+    );
+  }class _MoodSelectorCard extends StatefulWidget {
+  final MoodStore store;
+  const _MoodSelectorCard({required this.store});
+
+  @override
+  State<_MoodSelectorCard> createState() => _MoodSelectorCardState();
+}
+
+class _MoodSelectorCardState extends State<_MoodSelectorCard> {
+  MoodLevel? _selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Today's Mood",
+              style: TextStyle(color: Colors.white70, fontSize: 13)),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: MoodLevel.values.map((m) {
+              final sel = _selected == m;
+              return GestureDetector(
+                onTap: () => setState(() => _selected = m),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: sel
+                        ? m.color.withOpacity(0.3)
+                        : Colors.white.withOpacity(0.05),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: sel ? m.color : Colors.transparent,
+                        width: 2),
+                  ),
+                  child: Column(children: [
+                    Text(
+                      ['ðŸ˜¢', 'ðŸ˜”', 'ðŸ˜', 'ðŸ˜Š', 'ðŸ¤©'][m.index],
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(m.label,
+                        style: TextStyle(
+                            color: sel ? m.color : Colors.white54,
+                            fontSize: 10,
+                            fontWeight: sel
+                                ? FontWeight.bold
+                                : FontWeight.normal)),
+                  ]),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// â”€â”€â”€ Weekly Chart Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+class _WeeklyChartCard extends StatelessWidget {
+  final MoodStore store;
+  const _WeeklyChartCard({required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final days = List.generate(
+        7, (i) => DateTime.now().subtract(Duration(days: 6 - i)));
+    final labels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Weekly Overview',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15)),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: List.generate(7, (i) {
+              final k = '${days[i].year}-'
+                  '${days[i].month.toString().padLeft(2, "0")}-'
+                  '${days[i].day.toString().padLeft(2, "0")}';
+              final es = store.entries
+                  .where((e) => e.date.toString().startsWith(k))
+                  .toList();
+              final avg = es.isEmpty
+                  ? 0.0
+                  : es.map((e) => e.mood.value).reduce((a, b) => a + b) /
+                      es.length;
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 600),
+                    width: 28,
+                    height: avg == 0 ? 4 : avg * 16,
+                    decoration: BoxDecoration(
+                      color: avg == 0
+                          ? Colors.white24
+                          : Color.lerp(
+                              const Color(0xFF9370DB),
+                              const Color(0xFF3CB371),
+                              avg / 5)!,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(labels[i],
+                      style: const TextStyle(
+                          color: Colors.white70, fontSize: 11)),
+                ],
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+
+// â”€â”€â”€ Entry Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+class _EntryCard extends StatelessWidget {
+  final JournalEntry entry;
+  const _EntryCard({required this.entry});
+
+  String _timeLabel() {
+    final now = DateTime.now();
+    final diff = now.difference(entry.date);
+    if (diff.inDays == 0) return 'Today';
+    if (diff.inDays == 1) return 'Yesterday';
+    return '${diff.inDays}d ago';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(children: [
+        Text(
+          ['ðŸ˜¢', 'ðŸ˜”', 'ðŸ˜', 'ðŸ˜Š', 'ðŸ¤©'][entry.mood.index],
+          style: const TextStyle(fontSize: 22),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(entry.title,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14)),
+            if (entry.body.isNotEmpty)
+              Text(
+                entry.body.length > 50
+                    ? '${entry.body.substring(0, 50)}...'
+                    : entry.body,
+                style:
+                    const TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+          ]),
+        ),
+        Text(_timeLabel(),
+            style: const TextStyle(color: Colors.white38, fontSize: 11)),
+      ]),
+    );
+  }
+}
+
+// â”€â”€â”€ Journal List Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+class JournalListPage extends StatelessWidget {
+  final MoodStore store;
+  const JournalListPage({super.key, required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = store.entries;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Text('Journal',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold)),
+        ),
+        Expanded(
+          child: entries.isEmpty
+              ? const Center(
+                  child: Text('No entries yet.\nTap + to add one!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white54)))
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: entries.length,
+                  itemBuilder: (_, i) => _EntryCard(entry: entries[i]),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+// â”€â”€â”€ New Entry Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+class NewEntryScreen extends StatefulWidget {
+  final MoodStore store;
+  const NewEntryScreen({super.key, required this.store});
+
+  @override
+  State<NewEntryScreen> createState() => _NewEntryState();
+}
+
+class _NewEntryState extends State<NewEntryScreen> {
+  MoodLevel _mood = MoodLevel.good;
+  final _titleCtrl = TextEditingController();
+  final _bodyCtrl = TextEditingController();
+  final _tags = [
+    'Work',
+    'Family',
+    'Health',
+    'Social',
+    'Creative',
+    'Gratitude'
+  ];
+  final _acts = [
+    'Exercise',
+    'Reading',
+    'Music',
+    'Sleep',
+    'Cooking',
+    'Nature'
+  ];
+  final Set<String> _selTags = {};
+  final Set<String> _selActs = {};
+  double _intensity = 5;
+
+  void _save() {
+    if (_titleCtrl.text.isEmpty) return;
+    widget.store.addEntry(JournalEntry(
+      id: DateTime.now().toIso8601String(),
+      date: DateTime.now(),
+      mood: _mood,
+      title: _titleCtrl.text,
+      body: _bodyCtrl.text,
+      tags: _selTags.toList(),
+      activities: _selActs.toList(),
+      intensity: _intensity.toInt(),
+    ));
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF1A0A2E),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title:
+            const Text('New Entry', style: TextStyle(color: Colors.white)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          TextButton(
+            onPressed: _save,
+            child: const Text('Save',
+                style: TextStyle(
+                    color: Color(0xFF9370DB),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16)),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Date label
+            Text(
+              _formatDate(DateTime.now()),
+              style:
+                  const TextStyle(color: Colors.white54, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+
+            // Mood row
+            const Text('How are you feeling?',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15)),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: MoodLevel.values.map((m) {
+                final sel = _mood == m;
+                return GestureDetector(
+                  onTap: () => setState(() => _mood = m),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: sel
+                          ? m.color.withOpacity(0.25)
+                          : Colors.white.withOpacity(0.06),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: sel ? m.color : Colors.transparent,
+                          width: 2),
+                    ),
+                    child: Text(
+                      ['ðŸ˜¢', 'ðŸ˜”', 'ðŸ˜', 'ðŸ˜Š', 'ðŸ¤©'][m.index],
+                      style: TextStyle(fontSize: sel ? 28 : 22),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+
+            // Tags
+            const Text('Tags',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _tags.map((t) {
+                final sel = _selTags.contains(t);
+                return GestureDetector(
+                  onTap: () => setState(
+                      () => sel ? _selTags.remove(t) : _selTags.add(t)),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: sel
+                          ? const Color(0xFF6633CC)
+                          : Colors.white.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: sel
+                              ? const Color(0xFF6633CC)
+                              : Colors.white24),
+                    ),
+                    child: Text(t,
+                        style: TextStyle(
+                            color:
+                                sel ? Colors.white : Colors.white70,
+                            fontSize: 13)),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+// Title
+            TextField(
+              controller: _titleCtrl,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Entry title...',
+                hintStyle: const TextStyle(color: Colors.white38),
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.08),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Body
+            TextField(
+              controller: _bodyCtrl,
+              style: const TextStyle(color: Colors.white),
+              maxLines: 6,
+              decoration: InputDecoration(
+                hintText: 'Write your thoughts...',
+                hintStyle: const TextStyle(color: Colors.white38),
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.08),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Intensity slider
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Mood Intensity',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15)),
+                Text('${_intensity.toInt()}/10',
+                    style: const TextStyle(
+                        color: Color(0xFF9370DB),
+                        fontWeight: FontWeight.bold)),
+              ],
+            ),
+            Slider(
+              value: _intensity,
+              min: 1,
+              max: 10,
+              divisions: 9,
+              activeColor: const Color(0xFF6633CC),
+              inactiveColor: Colors.white24,
+              onChanged: (v) => setState(() => _intensity = v),
+            ),
+            const SizedBox(height: 20),
+
+            // Activities
+            const Text('Activities',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _acts.map((a) {
+                final sel = _selActs.contains(a);
+                return GestureDetector(
+                  onTap: () => setState(
+                      () => sel ? _selActs.remove(a) : _selActs.add(a)),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: sel
+                          ? const Color(0xFF3CB371)
+                          : Colors.white.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: sel
+                              ? const Color(0xFF3CB371)
+                              : Colors.white24),
+                    ),
+                    child: Text(a,
+                        style: TextStyle(
+                            color:
+                                sel ? Colors.white : Colors.white70,
+                            fontSize: 13)),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 30),
+// Save button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6633CC),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Save Entry',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime d) {
+    const months = [
+      'Jan','Feb','Mar','Apr','May','Jun',
+      'Jul','Aug','Sep','Oct','Nov','Dec'
+    ];
+    const days = [
+      'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'
+    ];
+    return '${days[d.weekday - 1]}, ${months[d.month - 1]} ${d.day}, ${d.year}';
+  }
+}
+
+// â”€â”€â”€ Stats Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+class StatsPage extends StatelessWidget {
+  final MoodStore store;
+  const StatsPage({super.key, required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final dist = store.moodDistribution;
+    final total = dist.values.fold(0, (a, b) => a + b);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Analytics',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20)),
+          const SizedBox(height: 16),
+          Row(children: [
+            Expanded(
+                child: _StatCard(
+                    title: 'Avg Mood',
+                    value: store.averageMood(7).toStringAsFixed(1),
+                    sub: '/ 5.0 this week',
+                    color: const Color(0xFF6633CC))),
+            const SizedBox(width: 12),
+            Expanded(
+                child: _StatCard(
+                    title: 'Streak',
+                    value: '${store.currentStreak}',
+                    sub: 'days in a row',
+                    color: const Color(0xFF3C64B3))),
+          ]),
+          const SizedBox(height: 20),
+          _DistributionCard(dist: dist, total: total),
+          const SizedBox(height: 20),
+          _ActivitiesCard(store: store),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final String title, value, sub;
+  final Color color;
+  const _StatCard(
+      {required this.title,
+      required this.value,
+      required this.sub,
+      required this.color});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+            color: color.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(18)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title,
+              style:
+                  const TextStyle(color: Colors.white70, fontSize: 12)),
+          const SizedBox(height: 6),
+          Text(value,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold)),
+          Text(sub,
+              style: const TextStyle(
+                  color: Colors.white60, fontSize: 11)),
+        ]),
+      );
+}
+
+class _DistributionCard extends StatelessWidget {
+  final Map<MoodLevel, int> dist;
+  final int total;
+  const _DistributionCard({required this.dist, required this.total});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(18)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Mood Distribution',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15)),
+          const SizedBox(height: 16),
+          if (total == 0)
+            const Center(
+                child: Text('No data yet',
+                    style: TextStyle(color: Colors.white54)))
+          else
+            Column(
+              children: MoodLevel.values.map((l) {
+                final count = dist[l] ?? 0;
+                final pct = total == 0 ? 0.0 : count / total;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(children: [
+                    SizedBox(
+                      width: 44,
+                      child: Text(l.label,
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 12)),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: pct,
+                          minHeight: 10,
+                          backgroundColor: Colors.white12,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(l.color),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text('${(pct * 100).toInt()}%',
+                        style: const TextStyle(
+                            color: Colors.white54, fontSize: 11)),
+                  ]),
+                );
+              }).toList(),
+            ),
+        ]),
+      );
+}
+class _ActivitiesCard extends StatelessWidget {
+  final MoodStore store;
+  const _ActivitiesCard({required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final activities = store.topActivities;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(18)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Top Mood Boosters',
+            style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 15)),
+        const SizedBox(height: 12),
+        if (activities.isEmpty)
+          const Text('Log activities to see insights',
+              style: TextStyle(color: Colors.white54, fontSize: 13))
+        else
+          ...activities.entries
+              .toList()
+              .take(5)
+              .map((e) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(children: [
+                      SizedBox(
+                        width: 70,
+                        child: Text(e.key,
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 12)),
+                      ),
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: LinearProgressIndicator(
+                            value: e.value / 5,
+                            minHeight: 10,
+                            backgroundColor: Colors.white12,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                                Color(0xFF3CB371)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text('${(e.value / 5 * 100).toInt()}%',
+                          style: const TextStyle(
+                              color: Colors.white54, fontSize: 11)),
+                    ]),
+                  )),
+      ]),
+    );
+  }
+}
+
+// â”€â”€â”€ Profile Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(children: [
+        const SizedBox(height: 20),
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF6633CC), Color(0xFF9370DB)],
+            ),
+          ),
+          child: const Icon(Icons.person, color: Colors.white, size: 40),
+        ),
+        const SizedBox(height: 12),
+        const Text('MoodBloom User',
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        const Text('Tracking your wellbeing ðŸŒ¸',
+            style: TextStyle(color: Colors.white54, fontSize: 13)),
+        const SizedBox(height: 30),
+        _ProfileTile(
+            icon: Icons.notifications_outlined, label: 'Daily Reminder'),
+        _ProfileTile(icon: Icons.lock_outline, label: 'Privacy & Security'),
+        _ProfileTile(icon: Icons.color_lens_outlined, label: 'Appearance'),
+        _ProfileTile(icon: Icons.backup_outlined, label: 'Backup & Restore'),
+        _ProfileTile(icon: Icons.info_outline, label: 'About MoodBloom'),
+      ]),
+    );
+  }
+}
+
+class _ProfileTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _ProfileTile({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(14)),
+        child: Row(children: [
+          Icon(icon, color: const Color(0xFF9370DB), size: 20),
+          const SizedBox(width: 14),
+          Text(label,
+              style:
+                  const TextStyle(color: Colors.white, fontSize: 14)),
+          const Spacer(),
+          const Icon(Icons.chevron_right,
+              color: Colors.white38, size: 18),
+        ]),
+      );
+}
